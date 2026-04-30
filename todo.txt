@@ -1,0 +1,8 @@
+1. HOTOVO: Solid = ib, vb, part buffer
+2. HOTOVO: Model transformace
+3. HOTOVO: View transformace = camera
+4. HOTOVO: Projection transformace
+5. TODO: ořezání (fast, z, x, y)
+6. HOTOVO: dehomogenizace
+7. HOTOVO: transformace do okna obrazovky
+8. HOTOVO: Rasterizace s viditelností
