@@ -273,15 +273,22 @@ public class Controller3D {
         Solid activeSolid = scene.get(activeSolidIndex);
         java.awt.Graphics g = panel.getRaster().getImage().getGraphics();
         g.setColor(java.awt.Color.WHITE);
-        String activeName = activeSolid.getName().equals("Light")
-                ? "Light (posun: Z/U/H/J/V/B)"
-                : activeSolid.getName();
-        g.drawString("Aktivni teleso (Tab): " + activeName, 10, 20);
-        g.drawString("Projekce (P): " + (usePerspective ? "Perspektivni" : "Ortogonalni"), 10, 40);
-        g.drawString("Mod (Q): " + (wireframeMode ? "Dratovy" : "Vyplneny"), 10, 60);
-        g.drawString("Textura (T): " + (activeSolid.isTextureEnabled() && activeSolid.getTexture() != null ? "Zapnuta" : "Vypnuta"), 10, 80);
-        g.drawString("Osvetleni (F): " + (useLighting ? "Zapnuto" : "Vypnuto"), 10, 100);
-        g.drawString(String.format("Svetlo @ (%.1f, %.1f, %.1f)", lightPosition.getX(), lightPosition.getY(), lightPosition.getZ()), 10, 120);
+        
+        int y = 20;
+        int step = 15;
+        g.drawString("Aktivni teleso (Tab): " + activeSolid.getName(), 10, y); y += step;
+        g.drawString("Projekce (P): " + (usePerspective ? "Persp" : "Ortho"), 10, y); y += step;
+        g.drawString("Zobrazeni (Q): " + (wireframeMode ? "Dratove" : "Vyplnene"), 10, y); y += step;
+        g.drawString("Textura (T): " + (activeSolid.isTextureEnabled() && activeSolid.getTexture() != null ? "Zapnuta" : "Vypnuta"), 10, y); y += step;
+        g.drawString("Osvetleni (F): " + (useLighting ? "Zapnuto" : "Vypnuto"), 10, y); y += step;
+        g.drawString(String.format("Svetlo poz: %.1f, %.1f, %.1f", lightPosition.getX(), lightPosition.getY(), lightPosition.getZ()), 10, y); y += step;
+        
+        y += step; // oddělení
+        g.drawString("[Kamera] Pohyb: WSAD, Space/C | Rotace: Tazeni mysi", 10, y); y += step;
+        g.drawString("[Teleso] Posun: ZU (X) | HJ (Y) | VB (Z)", 10, y); y += step;
+        g.drawString("[Teleso] Rotace: IO (X) | KL (Y) | NM (Z)", 10, y); y += step;
+        g.drawString("[Teleso] Scale: + / -", 10, y); y += step;
+        g.drawString("Reset sceny: R", 10, y);
 
         panel.repaint();
     }

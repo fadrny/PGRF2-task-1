@@ -2,7 +2,6 @@ package renderer;
 
 import model.Part;
 import model.Vertex;
-import rasterize.LineRasterizer;
 import rasterize.TriangleRasterizer;
 import solid.Solid;
 import transforms.Mat4;
