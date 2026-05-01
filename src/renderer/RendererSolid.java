@@ -11,7 +11,6 @@ import transforms.Point3D;
 import transforms.Vec3D;
 
 public class RendererSolid {
-    private final LineRasterizer lineRasterizer;
     private final TriangleRasterizer triangleRasterizer;
     
     private Mat4 view = new Mat4Identity();
@@ -22,8 +21,7 @@ public class RendererSolid {
     private transforms.Col lightColor = new transforms.Col(1.0, 1.0, 1.0);
     private boolean useLighting = true;
 
-    public RendererSolid(LineRasterizer lineRasterizer, TriangleRasterizer triangleRasterizer) {
-        this.lineRasterizer = lineRasterizer;
+    public RendererSolid(TriangleRasterizer triangleRasterizer) {
         this.triangleRasterizer = triangleRasterizer;
     }
 
@@ -59,8 +57,8 @@ public class RendererSolid {
         boolean isLight = solid.getName().equals("Light");
         int triPartIndex = 0;
 
-        // Světelné těleso se vždy renderuje bez osvětlení (svítí vlastní barvou)
-        if (isLight) {
+        // Světlo a Osy se renderují bez osvětlení (svítí vlastní barvou)
+        if (isLight || isAxis) {
             triangleRasterizer.setLighting(null, null, false);
         } else {
             triangleRasterizer.setLighting(lightPosition, cameraPosition, useLighting);
@@ -77,7 +75,6 @@ public class RendererSolid {
             int index = part.getStartIndex();
             switch (part.getType()) {
                 case LINES:
-                    lineRasterizer.setColor(solid.getBaseColor());
                     for (int i = 0; i < part.getCount(); i++) {
                         int indexA = solid.getIndexBuffer().get(index++);
                         int indexB = solid.getIndexBuffer().get(index++);
@@ -191,8 +188,8 @@ public class RendererSolid {
         if (vA.getY() < -1 && vB.getY() < -1 && vC.getY() < -1) return;
         if (vA.getY() > 1 && vB.getY() > 1 && vC.getY() > 1) return;
 
-        int w = lineRasterizer.getRaster().getWidth();
-        int h = lineRasterizer.getRaster().getHeight();
+        int w = triangleRasterizer.getZBuffer().getWidth();
+        int h = triangleRasterizer.getZBuffer().getHeight();
 
         // perspective-correct: uložíme 1/w do position.W a UV vydělíme w
         Vertex tA = a.withPosition(new Point3D(

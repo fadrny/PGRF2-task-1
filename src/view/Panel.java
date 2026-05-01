@@ -7,12 +7,15 @@ import java.awt.*;
 
 public class Panel extends JPanel {
 
-    private final RasterBufferedImage raster;
+    private RasterBufferedImage raster;
 
     public Panel(int width, int height) {
         setPreferredSize(new Dimension(width, height));
+        this.raster = new RasterBufferedImage(width, height);
+    }
 
-        raster = new RasterBufferedImage(width, height);
+    public void resizeRaster(int width, int height) {
+        this.raster = new RasterBufferedImage(width, height);
     }
 
     @Override

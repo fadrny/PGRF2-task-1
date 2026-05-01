@@ -1,8 +1,6 @@
 package controller;
 
 import raster.ZBuffer;
-import rasterize.LineRasterizer;
-import rasterize.LineRasterizerGraphics;
 import rasterize.TriangleRasterizer;
 import renderer.RendererSolid;
 import solid.Cube;
@@ -13,6 +11,8 @@ import solid.Axis;
 import transforms.*;
 import view.Panel;
 
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
@@ -21,14 +21,14 @@ import java.util.List;
 
 public class Controller3D {
     private final Panel panel;
-    private final ZBuffer zBuffer;
-    private final RendererSolid renderer;
+    private ZBuffer zBuffer;
+    private RendererSolid renderer;
 
     private final List<Solid> scene = new java.util.ArrayList<>();
     private final List<Solid> axes;
     private Camera camera;
-    private final Mat4 projectionPersp;
-    private final Mat4 projectionOrtho;
+    private Mat4 projectionPersp;
+    private Mat4 projectionOrtho;
     private boolean usePerspective = true;
     private boolean wireframeMode = false;
     
@@ -40,9 +40,8 @@ public class Controller3D {
     public Controller3D(Panel panel) {
         this.panel = panel;
         this.zBuffer = new ZBuffer(panel.getRaster());
-        LineRasterizer lineRasterizer = new LineRasterizerGraphics(panel.getRaster());
         TriangleRasterizer triangleRasterizer = new TriangleRasterizer(zBuffer);
-        this.renderer = new RendererSolid(lineRasterizer, triangleRasterizer);
+        this.renderer = new RendererSolid(triangleRasterizer);
 
         // Osy musí být inicializovány před voláním drawScene()
         Solid axisX = new Axis("Osa X", 1, 0, 0, new transforms.Col(255, 0, 0));
@@ -89,6 +88,26 @@ public class Controller3D {
 
     private void initListeners() {
         panel.setFocusTraversalKeysEnabled(false);
+
+        panel.addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                int w = panel.getWidth();
+                int h = panel.getHeight();
+                if (w <= 0 || h <= 0) return;
+
+                panel.resizeRaster(w, h);
+                zBuffer = new ZBuffer(panel.getRaster());
+                TriangleRasterizer triangleRasterizer = new TriangleRasterizer(zBuffer);
+                renderer = new RendererSolid(triangleRasterizer);
+
+                double aspect = (double) h / w;
+                projectionPersp = new Mat4PerspRH(Math.PI / 4, aspect, 0.1, 100.0);
+                projectionOrtho = new Mat4OrthoRH(10 * (double)w / 800, 10 * (double)h / 800, 0.1, 100.0);
+                
+                drawScene();
+            }
+        });
         
         panel.addMouseListener(new MouseAdapter() {
             @Override
