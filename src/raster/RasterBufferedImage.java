@@ -8,7 +8,7 @@ import java.util.Optional;
 
 public class RasterBufferedImage implements Raster<Col> {
 
-    private BufferedImage image;
+    private final BufferedImage image;
 
     public RasterBufferedImage(int width, int height) {
         image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
@@ -16,13 +16,17 @@ public class RasterBufferedImage implements Raster<Col> {
 
     @Override
     public void setValue(int x, int y, Col color) {
-        // TODO: ošetřit zápis mimo raster
+        if (!isInside(x, y)) {
+            return;
+        }
         image.setRGB(x, y, color.getRGB());
     }
 
     @Override
     public Optional<Col> getValue(int x, int y) {
-        // TODO: ošetřit get mimo raster
+        if (!isInside(x, y)) {
+            return Optional.empty();
+        }
         return Optional.of(new Col(image.getRGB(x, y)));
     }
 
@@ -44,5 +48,9 @@ public class RasterBufferedImage implements Raster<Col> {
 
     public BufferedImage getImage() {
         return image;
+    }
+
+    private boolean isInside(int x, int y) {
+        return x >= 0 && x < getWidth() && y >= 0 && y < getHeight();
     }
 }
