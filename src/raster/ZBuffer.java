@@ -36,4 +36,12 @@ public class ZBuffer {
     private boolean isInside(int x, int y) {
         return x >= 0 && x < imageBuffer.getWidth() && y >= 0 && y < imageBuffer.getHeight();
     }
+
+    public int getWidth() {
+        return imageBuffer.getWidth();
+    }
+
+    public int getHeight() {
+        return imageBuffer.getHeight();
+    }
 }

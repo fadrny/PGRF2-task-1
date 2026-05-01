@@ -10,38 +10,67 @@ public class Sphere extends Solid {
         setName("Sphere");
         setBaseColor(new Col(0xe71d36));
 
-        int outerSegments = 28;
-        int horizontalSegments = 20;
-        int verticalSegments = 20;
+        int stacks = 10;
+        int slices = 10;
+        double radius = 0.5;
 
-        int outerStart = vertexBuffer.size();
-        addEllipse(390, 305, 95, 95, 0.50, outerSegments);
-        addLoopIndices(outerStart, outerSegments);
+        for (int i = 0; i <= stacks; i++) {
+            double v = (double) i / stacks;
+            double phi = v * Math.PI;
 
-        int horizontalStart = vertexBuffer.size();
-        addEllipse(390, 305, 95, 35, 0.47, horizontalSegments);
-        addLoopIndices(horizontalStart, horizontalSegments);
+            for (int j = 0; j <= slices; j++) {
+                double u = (double) j / slices;
+                double theta = u * 2 * Math.PI;
 
-        int verticalStart = vertexBuffer.size();
-        addEllipse(390, 305, 35, 95, 0.53, verticalSegments);
-        addLoopIndices(verticalStart, verticalSegments);
+                double x = radius * Math.sin(phi) * Math.cos(theta);
+                double y = radius * Math.sin(phi) * Math.sin(theta);
+                double z = radius * Math.cos(phi);
 
-        partBuffer.add(new Part(TopologyType.LINES, 0, outerSegments + horizontalSegments + verticalSegments));
-    }
+                double r = Math.max(0, Math.min(1, x + 0.5));
+                double g = Math.max(0, Math.min(1, y + 0.5));
+                double b = Math.max(0, Math.min(1, z + 0.5));
 
-    private void addEllipse(double centerX, double centerY, double radiusX, double radiusY, double z, int segments) {
-        for (int i = 0; i < segments; i++) {
-            double angle = (2.0 * Math.PI * i) / segments;
-            double x = centerX + Math.cos(angle) * radiusX;
-            double y = centerY + Math.sin(angle) * radiusY;
-            vertexBuffer.add(new Vertex(x, y, z));
+                vertexBuffer.add(new Vertex(x, y, z, new Col(r, g, b)));
+            }
         }
-    }
 
-    private void addLoopIndices(int startIndex, int segments) {
-        for (int i = 0; i < segments; i++) {
-            int next = startIndex + ((i + 1) % segments);
-            addIndices(startIndex + i, next);
+        int lineCount = 0;
+        for (int i = 0; i <= stacks; i++) {
+            for (int j = 0; j < slices; j++) {
+                int a = i * (slices + 1) + j;
+                int b = a + 1;
+                addIndices(a, b);
+                lineCount++;
+            }
         }
+        
+        for (int i = 0; i < stacks; i++) {
+            for (int j = 0; j <= slices; j++) {
+                int a = i * (slices + 1) + j;
+                int b = a + (slices + 1);
+                addIndices(a, b);
+                lineCount++;
+            }
+        }
+
+        partBuffer.add(new Part(TopologyType.LINES, 0, lineCount));
+
+        int triStart = getIndexBuffer().size();
+        int numTriangles = 0;
+        
+        for (int i = 0; i < stacks; i++) {
+            for (int j = 0; j < slices; j++) {
+                int a = i * (slices + 1) + j;
+                int b = a + 1;
+                int c = a + (slices + 1);
+                int d = c + 1;
+                
+                addIndices(a, b, c);
+                addIndices(b, d, c);
+                numTriangles += 2;
+            }
+        }
+        
+        partBuffer.add(new Part(TopologyType.TRIANGLES, triStart, numTriangles));
     }
 }

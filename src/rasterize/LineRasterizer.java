@@ -24,4 +24,8 @@ public abstract class LineRasterizer {
     public void setColor(Col color) {
         this.color = color;
     }
+
+    public RasterBufferedImage getRaster() {
+        return raster;
+    }
 }
