@@ -2,6 +2,8 @@ package raster;
 
 import transforms.Col;
 
+import java.util.Optional;
+
 public class ZBuffer {
     private final Raster<Col> imageBuffer;
     private final Raster<Double> depthBuffer;
@@ -12,15 +14,26 @@ public class ZBuffer {
     }
 
     public void setPixelWithZTest(int x, int y, double z, Col color) {
-        // TODO: načtu hodnotu Z z depthbufferu
-        // TODO: porovnám staré a nové z
-        // TODO: rozhodnu, jestli
-        // TODO:    a) končím, nic se nestane
-        // TODO:    b) obarvím pixel a updatuju hodnotu v depth bufferu
+        if (!isInside(x, y) || Double.isNaN(z) || Double.isInfinite(z) || z < 0.0 || z > 1.0) {
+            return;
+        }
 
-        // tohle jen pro debug
-        imageBuffer.setValue(x, y, color);
+        Optional<Double> currentDepth = depthBuffer.getValue(x, y);
+        if (currentDepth.isEmpty()) {
+            return;
+        }
+
+        if (z <= currentDepth.get()) {
+            depthBuffer.setValue(x, y, z);
+            imageBuffer.setValue(x, y, color);
+        }
     }
 
-    // TODO: metoda clear
+    public void clear() {
+        depthBuffer.clear();
+    }
+
+    private boolean isInside(int x, int y) {
+        return x >= 0 && x < imageBuffer.getWidth() && y >= 0 && y < imageBuffer.getHeight();
+    }
 }
