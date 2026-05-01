@@ -3,13 +3,21 @@ package rasterize;
 import model.Vertex;
 import raster.ZBuffer;
 import transforms.Col;
-import util.Lerp;
+
+import java.awt.image.BufferedImage;
 
 public class TriangleRasterizer {
     private final ZBuffer zBuffer;
+    private BufferedImage texture;
+    private boolean useTexture;
 
     public TriangleRasterizer(ZBuffer zBuffer) {
         this.zBuffer = zBuffer;
+    }
+
+    public void setTexture(BufferedImage texture, boolean useTexture) {
+        this.texture = texture;
+        this.useTexture = useTexture;
     }
 
     public void rasterize(Vertex a, Vertex b, Vertex c) {
@@ -70,7 +78,37 @@ public class TriangleRasterizer {
             double t = (dx == 0) ? 0 : (x - v1.getX()) / dx;
             t = Math.max(0.0, Math.min(1.0, t));
             Vertex pixel = v1.mul(1 - t).add(v2.mul(t));
-            zBuffer.setPixelWithZTest(x, y, pixel.getPosition().getZ(), pixel.getColor());
+
+            Col color;
+            if (useTexture && texture != null) {
+                // perspective-correct: UV bylo vyděleno w, 1/w je v position.W
+                double oneOverW = pixel.getW();
+                if (oneOverW != 0) {
+                    double u = pixel.getUv().getX() / oneOverW;
+                    double v = pixel.getUv().getY() / oneOverW;
+                    color = sampleTexture(u, v);
+                } else {
+                    color = pixel.getColor();
+                }
+            } else {
+                color = pixel.getColor();
+            }
+
+            zBuffer.setPixelWithZTest(x, y, pixel.getPosition().getZ(), color);
         }
+    }
+
+    private Col sampleTexture(double u, double v) {
+        // wrap UV do [0, 1]
+        u = u - Math.floor(u);
+        v = v - Math.floor(v);
+
+        int tx = (int) (u * (texture.getWidth() - 1));
+        int ty = (int) (v * (texture.getHeight() - 1));
+
+        tx = Math.max(0, Math.min(texture.getWidth() - 1, tx));
+        ty = Math.max(0, Math.min(texture.getHeight() - 1, ty));
+
+        return new Col(texture.getRGB(tx, ty));
     }
 }

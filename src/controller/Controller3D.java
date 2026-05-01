@@ -48,17 +48,23 @@ public class Controller3D {
         Solid sphere = new Sphere();
         Solid cylinder = new Cylinder();
 
-        cube.setModelMatrix(new Mat4Transl(-2, 0, 0));
-        cylinder.setModelMatrix(new Mat4Transl(2, 0, 0));
+        cube.setModelMatrix(new Mat4Transl(2, 0, 0));
+        sphere.setModelMatrix(new Mat4Transl(4, 0, 0));
+        cylinder.setModelMatrix(new Mat4Transl(6, 0, 0));
+
+        cube.loadTexture("textures/t1.jpg");
+        sphere.loadTexture("textures/t2.jpg");
+        cylinder.loadTexture("textures/c1.jpg");
+        cylinder.loadTexture2("textures/c2.jpg");
 
         this.scene = List.of(cube, sphere, cylinder);
         
-        Solid axisX = new Axis("Osa X", 3, 0, 0, new transforms.Col(1, 0, 0));
-        Solid axisY = new Axis("Osa Y", 0, 3, 0, new transforms.Col(0, 1, 0));
-        Solid axisZ = new Axis("Osa Z", 0, 0, 3, new transforms.Col(0, 0, 1));
+        Solid axisX = new Axis("Osa X", 1, 0, 0, new transforms.Col(255, 0, 0));
+        Solid axisY = new Axis("Osa Y", 0, 1, 0, new transforms.Col(0, 255, 0));
+        Solid axisZ = new Axis("Osa Z", 0, 0, 1, new transforms.Col(0, 0, 255));
         this.axes = List.of(axisX, axisY, axisZ);
 
-        camera = new Camera(new Vec3D(0, -5, 2), Math.toRadians(90), Math.toRadians(-20), 1.0, true);
+        camera = new Camera(new Vec3D(3, -8, 5), Math.toRadians(90), Math.toRadians(-30), 1.0, true);
         projectionPersp = new Mat4PerspRH(Math.PI / 4, 600.0 / 800.0, 0.1, 100.0);
         projectionOrtho = new Mat4OrthoRH(10, 10 * 600.0 / 800.0, 0.1, 100.0);
 
@@ -118,6 +124,10 @@ public class Controller3D {
                         
                     case KeyEvent.VK_Q:
                         wireframeMode = !wireframeMode;
+                        break;
+                        
+                    case KeyEvent.VK_T:
+                        active.setTextureEnabled(!active.isTextureEnabled());
                         break;
                         
                     case KeyEvent.VK_TAB:
@@ -198,11 +208,13 @@ public class Controller3D {
             renderer.render(axis);
         }
 
+        Solid activeSolid = scene.get(activeSolidIndex);
         java.awt.Graphics g = panel.getRaster().getImage().getGraphics();
         g.setColor(java.awt.Color.WHITE);
-        g.drawString("Aktivni teleso (Tab): " + scene.get(activeSolidIndex).getName(), 10, 20);
+        g.drawString("Aktivni teleso (Tab): " + activeSolid.getName(), 10, 20);
         g.drawString("Projekce (P): " + (usePerspective ? "Perspektivni" : "Ortogonalni"), 10, 40);
         g.drawString("Mod (Q): " + (wireframeMode ? "Dratovy" : "Vyplneny"), 10, 60);
+        g.drawString("Textura (T): " + (activeSolid.isTextureEnabled() && activeSolid.getTexture() != null ? "Zapnuta" : "Vypnuta"), 10, 80);
 
         panel.repaint();
     }

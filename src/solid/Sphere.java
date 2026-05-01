@@ -4,14 +4,15 @@ import model.Part;
 import model.TopologyType;
 import model.Vertex;
 import transforms.Col;
+import transforms.Vec2D;
 
 public class Sphere extends Solid {
     public Sphere() {
         setName("Sphere");
         setBaseColor(new Col(0xe71d36));
 
-        int stacks = 10;
-        int slices = 10;
+        int stacks = 16;
+        int slices = 16;
         double radius = 0.5;
 
         for (int i = 0; i <= stacks; i++) {
@@ -30,7 +31,8 @@ public class Sphere extends Solid {
                 double g = Math.max(0, Math.min(1, y + 0.5));
                 double b = Math.max(0, Math.min(1, z + 0.5));
 
-                vertexBuffer.add(new Vertex(x, y, z, new Col(r, g, b)));
+                vertexBuffer.add(new Vertex(x, y, z, new Col(r, g, b),
+                        new transforms.Vec3D(), new Vec2D(u, v)));
             }
         }
 

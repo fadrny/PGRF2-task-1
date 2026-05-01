@@ -4,6 +4,8 @@ import model.Part;
 import model.TopologyType;
 import model.Vertex;
 import transforms.Col;
+import transforms.Vec2D;
+import transforms.Vec3D;
 
 public class Cylinder extends Solid {
     public Cylinder() {
@@ -12,57 +14,65 @@ public class Cylinder extends Solid {
 
         int sides = 20;
         double radius = 0.5;
-        double height = 1.0;
-        double halfHeight = height / 2.0;
+        double halfH = 0.5;
+        Col c = new Col(1.0, 1.0, 1.0);
+        Vec3D n = new Vec3D();
 
+        // plášť – každý segment má vlastní 4 vrcholy s UV
         for (int i = 0; i < sides; i++) {
-            double angle = (2.0 * Math.PI * i) / sides;
-            double x = Math.cos(angle) * radius;
-            double y = Math.sin(angle) * radius;
-            double r = Math.max(0, Math.min(1, x + 0.5));
-            double g = Math.max(0, Math.min(1, y + 0.5));
-            double bTop = Math.max(0, Math.min(1, halfHeight + 0.5));
-            vertexBuffer.add(new Vertex(x, y, halfHeight, new Col(r, g, bTop)));
+            double a0 = (2.0 * Math.PI * i) / sides;
+            double a1 = (2.0 * Math.PI * (i + 1)) / sides;
+            double u0 = (double) i / sides;
+            double u1 = (double) (i + 1) / sides;
+
+            vertexBuffer.add(new Vertex(Math.cos(a0)*radius, Math.sin(a0)*radius,  halfH, c, n, new Vec2D(u0, 0)));
+            vertexBuffer.add(new Vertex(Math.cos(a1)*radius, Math.sin(a1)*radius,  halfH, c, n, new Vec2D(u1, 0)));
+            vertexBuffer.add(new Vertex(Math.cos(a1)*radius, Math.sin(a1)*radius, -halfH, c, n, new Vec2D(u1, 1)));
+            vertexBuffer.add(new Vertex(Math.cos(a0)*radius, Math.sin(a0)*radius, -halfH, c, n, new Vec2D(u0, 1)));
         }
 
+        // čáry pláště
         for (int i = 0; i < sides; i++) {
-            double angle = (2.0 * Math.PI * i) / sides;
-            double x = Math.cos(angle) * radius;
-            double y = Math.sin(angle) * radius;
-            double r = Math.max(0, Math.min(1, x + 0.5));
-            double g = Math.max(0, Math.min(1, y + 0.5));
-            double bBottom = Math.max(0, Math.min(1, -halfHeight + 0.5));
-            vertexBuffer.add(new Vertex(x, y, -halfHeight, new Col(r, g, bBottom)));
+            int b = i * 4;
+            addIndices(b, b+1, b+1, b+2, b+2, b+3, b+3, b);
         }
+        partBuffer.add(new Part(TopologyType.LINES, 0, sides * 4));
 
+        // trojúhelníky pláště
+        int sideTriStart = getIndexBuffer().size();
         for (int i = 0; i < sides; i++) {
-            int next = (i + 1) % sides;
-            addIndices(i, next);
-            addIndices(i + sides, next + sides);
-            addIndices(i, i + sides);
+            int b = i * 4;
+            addIndices(b, b+1, b+2, b, b+2, b+3);
+        }
+        partBuffer.add(new Part(TopologyType.TRIANGLES, sideTriStart, sides * 2));
+
+        // podstavy – středový vrchol + obvod
+        int topCenter = vertexBuffer.size();
+        vertexBuffer.add(new Vertex(0, 0, halfH, c, n, new Vec2D(0.5, 0.5)));
+        for (int i = 0; i <= sides; i++) {
+            double a = (2.0 * Math.PI * i) / sides;
+            double u = 0.5 + 0.5 * Math.cos(a);
+            double v = 0.5 + 0.5 * Math.sin(a);
+            vertexBuffer.add(new Vertex(Math.cos(a)*radius, Math.sin(a)*radius, halfH, c, n, new Vec2D(u, v)));
         }
 
-        partBuffer.add(new Part(TopologyType.LINES, 0, sides * 3));
+        int botCenter = vertexBuffer.size();
+        vertexBuffer.add(new Vertex(0, 0, -halfH, c, n, new Vec2D(0.5, 0.5)));
+        for (int i = 0; i <= sides; i++) {
+            double a = (2.0 * Math.PI * i) / sides;
+            double u = 0.5 + 0.5 * Math.cos(a);
+            double v = 0.5 + 0.5 * Math.sin(a);
+            vertexBuffer.add(new Vertex(Math.cos(a)*radius, Math.sin(a)*radius, -halfH, c, n, new Vec2D(u, v)));
+        }
 
-        int triStart = getIndexBuffer().size();
-        int numTriangles = 0;
-        
+        // trojúhelníky podstav
+        int capTriStart = getIndexBuffer().size();
+        int capTris = 0;
         for (int i = 0; i < sides; i++) {
-            int next = (i + 1) % sides;
-            addIndices(i, next, i + sides);
-            addIndices(next, next + sides, i + sides);
-            numTriangles += 2;
+            addIndices(topCenter, topCenter + 1 + i, topCenter + 2 + i);
+            addIndices(botCenter, botCenter + 2 + i, botCenter + 1 + i);
+            capTris += 2;
         }
-        
-        for (int i = 1; i < sides - 1; i++) {
-            addIndices(0, i, i + 1);
-            numTriangles++;
-        }
-        for (int i = 1; i < sides - 1; i++) {
-            addIndices(sides, sides + i, sides + i + 1);
-            numTriangles++;
-        }
-
-        partBuffer.add(new Part(TopologyType.TRIANGLES, triStart, numTriangles));
+        partBuffer.add(new Part(TopologyType.TRIANGLES, capTriStart, capTris));
     }
 }

@@ -4,38 +4,53 @@ import model.Part;
 import model.TopologyType;
 import model.Vertex;
 import transforms.Col;
+import transforms.Vec2D;
+import transforms.Vec3D;
 
 public class Cube extends Solid {
     public Cube() {
         setName("Cube");
         setBaseColor(new Col(0x4ecdc4));
 
-        vertexBuffer.add(new Vertex(-0.5, -0.5, -0.5, new Col(0, 0, 0))); // 0
-        vertexBuffer.add(new Vertex(0.5, -0.5, -0.5, new Col(1, 0, 0)));  // 1
-        vertexBuffer.add(new Vertex(0.5, 0.5, -0.5, new Col(1, 1, 0)));   // 2
-        vertexBuffer.add(new Vertex(-0.5, 0.5, -0.5, new Col(0, 1, 0)));  // 3
-        
-        vertexBuffer.add(new Vertex(-0.5, -0.5, 0.5, new Col(0, 0, 1)));  // 4
-        vertexBuffer.add(new Vertex(0.5, -0.5, 0.5, new Col(1, 0, 1)));   // 5
-        vertexBuffer.add(new Vertex(0.5, 0.5, 0.5, new Col(1, 1, 1)));    // 6
-        vertexBuffer.add(new Vertex(-0.5, 0.5, 0.5, new Col(0, 1, 1)));   // 7
+        Col w = new Col(1.0, 1.0, 1.0);
+        Vec3D n = new Vec3D();
 
-        addIndices(
-                0, 1, 1, 2, 2, 3, 3, 0,
-                4, 5, 5, 6, 6, 7, 7, 4,
-                0, 4, 1, 5, 2, 6, 3, 7
-        );
-        partBuffer.add(new Part(TopologyType.LINES, 0, 12));
+        // front (z=-0.5)
+        v(-0.5,-0.5,-0.5, w,n, 0,0); v( 0.5,-0.5,-0.5, w,n, 1,0);
+        v( 0.5, 0.5,-0.5, w,n, 1,1); v(-0.5, 0.5,-0.5, w,n, 0,1);
+        // back (z=0.5)
+        v( 0.5,-0.5, 0.5, w,n, 0,0); v(-0.5,-0.5, 0.5, w,n, 1,0);
+        v(-0.5, 0.5, 0.5, w,n, 1,1); v( 0.5, 0.5, 0.5, w,n, 0,1);
+        // bottom (y=-0.5)
+        v(-0.5,-0.5, 0.5, w,n, 0,0); v( 0.5,-0.5, 0.5, w,n, 1,0);
+        v( 0.5,-0.5,-0.5, w,n, 1,1); v(-0.5,-0.5,-0.5, w,n, 0,1);
+        // top (y=0.5)
+        v(-0.5, 0.5,-0.5, w,n, 0,0); v( 0.5, 0.5,-0.5, w,n, 1,0);
+        v( 0.5, 0.5, 0.5, w,n, 1,1); v(-0.5, 0.5, 0.5, w,n, 0,1);
+        // left (x=-0.5)
+        v(-0.5,-0.5, 0.5, w,n, 0,0); v(-0.5,-0.5,-0.5, w,n, 1,0);
+        v(-0.5, 0.5,-0.5, w,n, 1,1); v(-0.5, 0.5, 0.5, w,n, 0,1);
+        // right (x=0.5)
+        v( 0.5,-0.5,-0.5, w,n, 0,0); v( 0.5,-0.5, 0.5, w,n, 1,0);
+        v( 0.5, 0.5, 0.5, w,n, 1,1); v( 0.5, 0.5,-0.5, w,n, 0,1);
 
+        // drátový model
+        for (int f = 0; f < 6; f++) {
+            int b = f * 4;
+            addIndices(b, b+1, b+1, b+2, b+2, b+3, b+3, b);
+        }
+        partBuffer.add(new Part(TopologyType.LINES, 0, 24));
+
+        // trojúhelníky
         int triStart = getIndexBuffer().size();
-        addIndices(
-            0, 1, 2, 0, 2, 3, // Bottom
-            4, 5, 6, 4, 6, 7, // Top
-            0, 1, 5, 0, 5, 4, // Front
-            1, 2, 6, 1, 6, 5, // Right
-            2, 3, 7, 2, 7, 6, // Back
-            3, 0, 4, 3, 4, 7  // Left
-        );
+        for (int f = 0; f < 6; f++) {
+            int b = f * 4;
+            addIndices(b, b+1, b+2, b, b+2, b+3);
+        }
         partBuffer.add(new Part(TopologyType.TRIANGLES, triStart, 12));
+    }
+
+    private void v(double x, double y, double z, Col c, Vec3D n, double u, double uv) {
+        vertexBuffer.add(new Vertex(x, y, z, c, n, new Vec2D(u, uv)));
     }
 }
