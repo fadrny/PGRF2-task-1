@@ -10,9 +10,18 @@ public class TriangleRasterizer {
     private final ZBuffer zBuffer;
     private BufferedImage texture;
     private boolean useTexture;
+    private transforms.Vec3D lightPosition;
+    private transforms.Vec3D cameraPosition;
+    private boolean useLighting = true;
 
     public TriangleRasterizer(ZBuffer zBuffer) {
         this.zBuffer = zBuffer;
+    }
+
+    public void setLighting(transforms.Vec3D lightPos, transforms.Vec3D cameraPos, boolean useLighting) {
+        this.lightPosition = lightPos;
+        this.cameraPosition = cameraPos;
+        this.useLighting = useLighting;
     }
 
     public void setTexture(BufferedImage texture, boolean useTexture) {
@@ -79,22 +88,34 @@ public class TriangleRasterizer {
             t = Math.max(0.0, Math.min(1.0, t));
             Vertex pixel = v1.mul(1 - t).add(v2.mul(t));
 
-            Col color;
+            Col baseColor;
             if (useTexture && texture != null) {
                 // perspective-correct: UV bylo vyděleno w, 1/w je v position.W
                 double oneOverW = pixel.getW();
                 if (oneOverW != 0) {
                     double u = pixel.getUv().getX() / oneOverW;
                     double v = pixel.getUv().getY() / oneOverW;
-                    color = sampleTexture(u, v);
+                    baseColor = sampleTexture(u, v);
                 } else {
-                    color = pixel.getColor();
+                    baseColor = pixel.getColor();
                 }
             } else {
-                color = pixel.getColor();
+                baseColor = pixel.getColor();
             }
 
-            zBuffer.setPixelWithZTest(x, y, pixel.getPosition().getZ(), color);
+            Col finalColor = baseColor;
+            if (useLighting && lightPosition != null && cameraPosition != null) {
+                transforms.Vec3D n = pixel.getNormal().normalized().orElse(new transforms.Vec3D(0,1,0));
+                transforms.Vec3D lightDir = lightPosition.sub(pixel.getWorldPosition().dehomog().orElse(new transforms.Vec3D())).normalized().orElse(new transforms.Vec3D(0,1,0));
+                
+                double ambient = 0.2;
+                double diffuse = Math.max(0, n.dot(lightDir));
+                
+                double intensity = Math.min(1.0, ambient + diffuse * 0.8);
+                finalColor = baseColor.mul(intensity);
+            }
+
+            zBuffer.setPixelWithZTest(x, y, pixel.getPosition().getZ(), finalColor);
         }
     }
 

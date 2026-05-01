@@ -25,10 +25,13 @@ public class Cylinder extends Solid {
             double u0 = (double) i / sides;
             double u1 = (double) (i + 1) / sides;
 
-            vertexBuffer.add(new Vertex(Math.cos(a0)*radius, Math.sin(a0)*radius,  halfH, c, n, new Vec2D(u0, 0)));
-            vertexBuffer.add(new Vertex(Math.cos(a1)*radius, Math.sin(a1)*radius,  halfH, c, n, new Vec2D(u1, 0)));
-            vertexBuffer.add(new Vertex(Math.cos(a1)*radius, Math.sin(a1)*radius, -halfH, c, n, new Vec2D(u1, 1)));
-            vertexBuffer.add(new Vertex(Math.cos(a0)*radius, Math.sin(a0)*radius, -halfH, c, n, new Vec2D(u0, 1)));
+            Vec3D n0 = new Vec3D(Math.cos(a0), Math.sin(a0), 0).normalized().orElse(new Vec3D(1,0,0));
+            Vec3D n1 = new Vec3D(Math.cos(a1), Math.sin(a1), 0).normalized().orElse(new Vec3D(1,0,0));
+
+            vertexBuffer.add(new Vertex(Math.cos(a0)*radius, Math.sin(a0)*radius,  halfH, c, n0, new Vec2D(u0, 0)));
+            vertexBuffer.add(new Vertex(Math.cos(a1)*radius, Math.sin(a1)*radius,  halfH, c, n1, new Vec2D(u1, 0)));
+            vertexBuffer.add(new Vertex(Math.cos(a1)*radius, Math.sin(a1)*radius, -halfH, c, n1, new Vec2D(u1, 1)));
+            vertexBuffer.add(new Vertex(Math.cos(a0)*radius, Math.sin(a0)*radius, -halfH, c, n0, new Vec2D(u0, 1)));
         }
 
         // čáry pláště
@@ -47,22 +50,25 @@ public class Cylinder extends Solid {
         partBuffer.add(new Part(TopologyType.TRIANGLES, sideTriStart, sides * 2));
 
         // podstavy – středový vrchol + obvod
+        Vec3D nTop = new Vec3D(0, 0, 1);
+        Vec3D nBot = new Vec3D(0, 0, -1);
+
         int topCenter = vertexBuffer.size();
-        vertexBuffer.add(new Vertex(0, 0, halfH, c, n, new Vec2D(0.5, 0.5)));
+        vertexBuffer.add(new Vertex(0, 0, halfH, c, nTop, new Vec2D(0.5, 0.5)));
         for (int i = 0; i <= sides; i++) {
             double a = (2.0 * Math.PI * i) / sides;
             double u = 0.5 + 0.5 * Math.cos(a);
             double v = 0.5 + 0.5 * Math.sin(a);
-            vertexBuffer.add(new Vertex(Math.cos(a)*radius, Math.sin(a)*radius, halfH, c, n, new Vec2D(u, v)));
+            vertexBuffer.add(new Vertex(Math.cos(a)*radius, Math.sin(a)*radius, halfH, c, nTop, new Vec2D(u, v)));
         }
 
         int botCenter = vertexBuffer.size();
-        vertexBuffer.add(new Vertex(0, 0, -halfH, c, n, new Vec2D(0.5, 0.5)));
+        vertexBuffer.add(new Vertex(0, 0, -halfH, c, nBot, new Vec2D(0.5, 0.5)));
         for (int i = 0; i <= sides; i++) {
             double a = (2.0 * Math.PI * i) / sides;
             double u = 0.5 + 0.5 * Math.cos(a);
             double v = 0.5 + 0.5 * Math.sin(a);
-            vertexBuffer.add(new Vertex(Math.cos(a)*radius, Math.sin(a)*radius, -halfH, c, n, new Vec2D(u, v)));
+            vertexBuffer.add(new Vertex(Math.cos(a)*radius, Math.sin(a)*radius, -halfH, c, nBot, new Vec2D(u, v)));
         }
 
         // trojúhelníky podstav

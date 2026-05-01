@@ -26,7 +26,7 @@ public class Controller3D {
     private final TriangleRasterizer triangleRasterizer;
     private final RendererSolid renderer;
 
-    private final List<Solid> scene;
+    private final List<Solid> scene = new java.util.ArrayList<>();
     private List<Solid> axes;
     private Camera camera;
     private Mat4 projectionPersp;
@@ -36,6 +36,8 @@ public class Controller3D {
     
     private int activeSolidIndex = 0;
     private int lastX, lastY;
+    private boolean useLighting = true;
+    private transforms.Vec3D lightPosition = new transforms.Vec3D(0, 0, 0);
 
     public Controller3D(Panel panel) {
         this.panel = panel;
@@ -44,6 +46,22 @@ public class Controller3D {
         this.triangleRasterizer = new TriangleRasterizer(zBuffer);
         this.renderer = new RendererSolid(lineRasterizer, triangleRasterizer);
 
+        // Osy musí být inicializovány před voláním drawScene()
+        Solid axisX = new Axis("Osa X", 1, 0, 0, new transforms.Col(255, 0, 0));
+        Solid axisY = new Axis("Osa Y", 0, 1, 0, new transforms.Col(0, 255, 0));
+        Solid axisZ = new Axis("Osa Z", 0, 0, 1, new transforms.Col(0, 0, 255));
+        this.axes = List.of(axisX, axisY, axisZ);
+
+        camera = new Camera(new Vec3D(3, -8, 5), Math.toRadians(90), Math.toRadians(-30), 1.0, true);
+        projectionPersp = new Mat4PerspRH(Math.PI / 4, 600.0 / 800.0, 0.1, 100.0);
+        projectionOrtho = new Mat4OrthoRH(10, 10 * 600.0 / 800.0, 0.1, 100.0);
+
+        resetScene();
+        initListeners();
+        drawScene();
+    }
+
+    private void resetScene() {
         Solid cube = new Cube();
         Solid sphere = new Sphere();
         Solid cylinder = new Cylinder();
@@ -57,19 +75,18 @@ public class Controller3D {
         cylinder.loadTexture("textures/c1.jpg");
         cylinder.loadTexture2("textures/c2.jpg");
 
-        this.scene = List.of(cube, sphere, cylinder);
-        
-        Solid axisX = new Axis("Osa X", 1, 0, 0, new transforms.Col(255, 0, 0));
-        Solid axisY = new Axis("Osa Y", 0, 1, 0, new transforms.Col(0, 255, 0));
-        Solid axisZ = new Axis("Osa Z", 0, 0, 1, new transforms.Col(0, 0, 255));
-        this.axes = List.of(axisX, axisY, axisZ);
+        Solid light = new solid.LightSource();
+        light.setModelMatrix(new Mat4Transl(6, -2, 3));
 
+        scene.clear();
+        scene.addAll(List.of(cube, sphere, cylinder, light));
+        activeSolidIndex = 0;
+
+        // Reset kamery a nastavení
         camera = new Camera(new Vec3D(3, -8, 5), Math.toRadians(90), Math.toRadians(-30), 1.0, true);
-        projectionPersp = new Mat4PerspRH(Math.PI / 4, 600.0 / 800.0, 0.1, 100.0);
-        projectionOrtho = new Mat4OrthoRH(10, 10 * 600.0 / 800.0, 0.1, 100.0);
-
-        initListeners();
-        drawScene();
+        usePerspective = true;
+        wireframeMode = false;
+        useLighting = true;
     }
 
     private void initListeners() {
@@ -116,6 +133,17 @@ public class Controller3D {
                         break;
                     case KeyEvent.VK_D:
                         camera = camera.right(speed);
+                        break;
+                    case KeyEvent.VK_SPACE:
+                        camera = camera.up(speed);
+                        break;
+                    case KeyEvent.VK_SHIFT:
+                    case KeyEvent.VK_C:
+                        camera = camera.down(speed);
+                        break;
+
+                    case KeyEvent.VK_R:
+                        resetScene();
                         break;
                         
                     case KeyEvent.VK_P:
@@ -166,8 +194,13 @@ public class Controller3D {
                     case KeyEvent.VK_K:
                         active.setModelMatrix(new Mat4RotY(0.1).mul(active.getModelMatrix()));
                         break;
+
                     case KeyEvent.VK_L:
                         active.setModelMatrix(new Mat4RotY(-0.1).mul(active.getModelMatrix()));
+                        break;
+                        
+                    case KeyEvent.VK_F:
+                        useLighting = !useLighting;
                         break;
                         
                     case KeyEvent.VK_N:
@@ -196,9 +229,20 @@ public class Controller3D {
         panel.getRaster().clear();
         zBuffer.clear();
 
+        // Odvod pozice světla z modelMatrix světelného tělesa
+        for (Solid s : scene) {
+            if (s.getName().equals("Light")) {
+                transforms.Point3D origin = new transforms.Point3D(0, 0, 0);
+                transforms.Point3D worldPos = origin.mul(s.getModelMatrix());
+                lightPosition = new transforms.Vec3D(worldPos.getX(), worldPos.getY(), worldPos.getZ());
+                break;
+            }
+        }
+
         renderer.setView(camera.getViewMatrix());
         renderer.setProjection(usePerspective ? projectionPersp : projectionOrtho);
         renderer.setWireframeMode(wireframeMode);
+        renderer.setLighting(lightPosition, camera.getPosition(), useLighting);
 
         for (Solid solid : scene) {
             renderer.render(solid);
@@ -211,10 +255,15 @@ public class Controller3D {
         Solid activeSolid = scene.get(activeSolidIndex);
         java.awt.Graphics g = panel.getRaster().getImage().getGraphics();
         g.setColor(java.awt.Color.WHITE);
-        g.drawString("Aktivni teleso (Tab): " + activeSolid.getName(), 10, 20);
+        String activeName = activeSolid.getName().equals("Light")
+                ? "Light (posun: Z/U/H/J/V/B)"
+                : activeSolid.getName();
+        g.drawString("Aktivni teleso (Tab): " + activeName, 10, 20);
         g.drawString("Projekce (P): " + (usePerspective ? "Perspektivni" : "Ortogonalni"), 10, 40);
         g.drawString("Mod (Q): " + (wireframeMode ? "Dratovy" : "Vyplneny"), 10, 60);
         g.drawString("Textura (T): " + (activeSolid.isTextureEnabled() && activeSolid.getTexture() != null ? "Zapnuta" : "Vypnuta"), 10, 80);
+        g.drawString("Osvetleni (F): " + (useLighting ? "Zapnuto" : "Vypnuto"), 10, 100);
+        g.drawString(String.format("Svetlo @ (%.1f, %.1f, %.1f)", lightPosition.getX(), lightPosition.getY(), lightPosition.getZ()), 10, 120);
 
         panel.repaint();
     }

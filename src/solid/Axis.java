@@ -10,8 +10,8 @@ public class Axis extends Solid {
         setName(name);
         setBaseColor(color);
 
-        double h = 0.15;  // šipka - velikost základny
-        double back = 0.25; // jak daleko od špičky začíná základna
+        double h = 0.05;  // šipka - velikost základny
+        double back = 0.15; // jak daleko od špičky začíná základna
 
         // 0: origin
         vertexBuffer.add(new Vertex(0, 0, 0, color));

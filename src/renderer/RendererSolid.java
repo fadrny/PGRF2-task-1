@@ -17,10 +17,20 @@ public class RendererSolid {
     private Mat4 view = new Mat4Identity();
     private Mat4 projection = new Mat4Identity();
     private boolean wireframeMode = true;
+    private transforms.Vec3D lightPosition;
+    private transforms.Vec3D cameraPosition;
+    private boolean useLighting = true;
 
     public RendererSolid(LineRasterizer lineRasterizer, TriangleRasterizer triangleRasterizer) {
         this.lineRasterizer = lineRasterizer;
         this.triangleRasterizer = triangleRasterizer;
+    }
+
+    public void setLighting(transforms.Vec3D lightPos, transforms.Vec3D cameraPos, boolean useLighting) {
+        this.lightPosition = lightPos;
+        this.cameraPosition = cameraPos;
+        this.useLighting = useLighting;
+        this.triangleRasterizer.setLighting(lightPos, cameraPos, useLighting);
     }
 
     public void setView(Mat4 view) {
@@ -36,16 +46,26 @@ public class RendererSolid {
     }
 
     public void render(Solid solid) {
-        Mat4 transformation = solid.getModelMatrix().mul(view).mul(projection);
+        Mat4 modelMatrix = solid.getModelMatrix();
+        Mat4 transformation = modelMatrix.mul(view).mul(projection);
         boolean isAxis = solid.getName().startsWith("Osa");
+        boolean isLight = solid.getName().equals("Light");
         int triPartIndex = 0;
 
+        // Světelné těleso se vždy renderuje bez osvětlení (svítí vlastní barvou)
+        if (isLight) {
+            triangleRasterizer.setLighting(null, null, false);
+        } else {
+            triangleRasterizer.setLighting(lightPosition, cameraPosition, useLighting);
+        }
+
         for (Part part : solid.getPartBuffer()) {
-            if (!isAxis && wireframeMode && part.getType() != model.TopologyType.LINES) {
+            boolean alwaysRender = isAxis || isLight;
+            if (!alwaysRender && wireframeMode && part.getType() != model.TopologyType.LINES) {
                 if (part.getType() == model.TopologyType.TRIANGLES) triPartIndex++;
                 continue;
             }
-            if (!isAxis && !wireframeMode && part.getType() != model.TopologyType.TRIANGLES) continue;
+            if (!alwaysRender && !wireframeMode && part.getType() != model.TopologyType.TRIANGLES) continue;
 
             switch (part.getType()) {
                 case LINES:
@@ -76,15 +96,26 @@ public class RendererSolid {
                         int indexB = solid.getIndexBuffer().get(index++);
                         int indexC = solid.getIndexBuffer().get(index++);
 
-                        Vertex a = solid.getVertexBuffer().get(indexA);
-                        Vertex b = solid.getVertexBuffer().get(indexB);
-                        Vertex c = solid.getVertexBuffer().get(indexC);
+                        Vertex a = transformVertexWorldAndNormal(solid.getVertexBuffer().get(indexA), modelMatrix);
+                        Vertex b = transformVertexWorldAndNormal(solid.getVertexBuffer().get(indexB), modelMatrix);
+                        Vertex c = transformVertexWorldAndNormal(solid.getVertexBuffer().get(indexC), modelMatrix);
 
                         transformAndRasterizeTriangle(a, b, c, transformation);
                     }
                     break;
             }
         }
+    }
+
+    private Vertex transformVertexWorldAndNormal(Vertex v, Mat4 modelMatrix) {
+        transforms.Point3D worldPos = v.getPosition().mul(modelMatrix);
+        
+        transforms.Vec3D n = v.getNormal();
+        transforms.Point3D tempN = new transforms.Point3D(n.getX(), n.getY(), n.getZ(), 0);
+        transforms.Point3D transN = tempN.mul(modelMatrix);
+        transforms.Vec3D worldNormal = new transforms.Vec3D(transN.getX(), transN.getY(), transN.getZ()).normalized().orElse(new transforms.Vec3D(0,1,0));
+        
+        return v.withWorldPosition(worldPos).withNormal(worldNormal);
     }
 
     private void transformAndRasterizeTriangle(Vertex a, Vertex b, Vertex c, Mat4 transformation) {
