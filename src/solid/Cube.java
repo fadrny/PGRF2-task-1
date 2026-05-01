@@ -13,7 +13,6 @@ public class Cube extends Solid {
         setBaseColor(new Col(0x4ecdc4));
 
         Col w = new Col(1.0, 1.0, 1.0);
-        Vec3D n = new Vec3D();
 
         // front (z=-0.5)
         Vec3D nFront = new Vec3D(0, 0, -1);

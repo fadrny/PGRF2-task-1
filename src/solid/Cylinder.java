@@ -16,7 +16,6 @@ public class Cylinder extends Solid {
         double radius = 0.5;
         double halfH = 0.5;
         Col c = new Col(1.0, 1.0, 1.0);
-        Vec3D n = new Vec3D();
 
         // plášť – každý segment má vlastní 4 vrcholy s UV
         for (int i = 0; i < sides; i++) {

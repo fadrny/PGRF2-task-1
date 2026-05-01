@@ -22,17 +22,15 @@ import java.util.List;
 public class Controller3D {
     private final Panel panel;
     private final ZBuffer zBuffer;
-    private final LineRasterizer lineRasterizer;
-    private final TriangleRasterizer triangleRasterizer;
     private final RendererSolid renderer;
 
     private final List<Solid> scene = new java.util.ArrayList<>();
-    private List<Solid> axes;
+    private final List<Solid> axes;
     private Camera camera;
-    private Mat4 projectionPersp;
-    private Mat4 projectionOrtho;
+    private final Mat4 projectionPersp;
+    private final Mat4 projectionOrtho;
     private boolean usePerspective = true;
-    private boolean wireframeMode = true;
+    private boolean wireframeMode = false;
     
     private int activeSolidIndex = 0;
     private int lastX, lastY;
@@ -42,8 +40,8 @@ public class Controller3D {
     public Controller3D(Panel panel) {
         this.panel = panel;
         this.zBuffer = new ZBuffer(panel.getRaster());
-        this.lineRasterizer = new LineRasterizerGraphics(panel.getRaster());
-        this.triangleRasterizer = new TriangleRasterizer(zBuffer);
+        LineRasterizer lineRasterizer = new LineRasterizerGraphics(panel.getRaster());
+        TriangleRasterizer triangleRasterizer = new TriangleRasterizer(zBuffer);
         this.renderer = new RendererSolid(lineRasterizer, triangleRasterizer);
 
         // Osy musí být inicializovány před voláním drawScene()

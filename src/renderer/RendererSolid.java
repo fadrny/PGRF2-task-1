@@ -67,10 +67,10 @@ public class RendererSolid {
             }
             if (!alwaysRender && !wireframeMode && part.getType() != model.TopologyType.TRIANGLES) continue;
 
+            int index = part.getStartIndex();
             switch (part.getType()) {
                 case LINES:
                     lineRasterizer.setColor(solid.getBaseColor());
-                    int index = part.getStartIndex();
                     for (int i = 0; i < part.getCount(); i++) {
                         int indexA = solid.getIndexBuffer().get(index++);
                         int indexB = solid.getIndexBuffer().get(index++);
@@ -90,7 +90,6 @@ public class RendererSolid {
                     triangleRasterizer.setTexture(tex, useTex);
                     triPartIndex++;
 
-                    index = part.getStartIndex();
                     for (int i = 0; i < part.getCount(); i++) {
                         int indexA = solid.getIndexBuffer().get(index++);
                         int indexB = solid.getIndexBuffer().get(index++);
@@ -146,16 +145,16 @@ public class RendererSolid {
         // seřadíme tak aby "in" vrcholy byly první
         if (inside == 1) {
             // jeden vrchol před kamerou – najdi ho a dej na pozici a
-            if (wB > NEAR_W) { Vertex t = a; a = b; b = t; wA = a.getW(); wB = b.getW(); }
-            else if (wC > NEAR_W) { Vertex t = a; a = c; c = t; wA = a.getW(); wC = c.getW(); }
+            if (wB > NEAR_W) { Vertex t = a; a = b; b = t; }
+            else if (wC > NEAR_W) { Vertex t = a; a = c; c = t; }
             // a je IN, b a c jsou OUT
             Vertex ab = clipEdge(a, b);
             Vertex ac = clipEdge(a, c);
             rasterizeClipped(a, ab, ac);
         } else {
             // dva vrcholy před kamerou – najdi ten co je OUT a dej na pozici c
-            if (wA <= NEAR_W) { Vertex t = a; a = b; b = c; c = t; wA = a.getW(); wB = b.getW(); wC = c.getW(); }
-            else if (wB <= NEAR_W) { Vertex t = b; b = c; c = t; wB = b.getW(); wC = c.getW(); }
+            if (wA <= NEAR_W) { Vertex t = a; a = b; b = c; c = t; }
+            else if (wB <= NEAR_W) { Vertex t = b; b = c; c = t; }
             // a,b jsou IN, c je OUT
             Vertex ac = clipEdge(a, c);
             Vertex bc = clipEdge(b, c);
@@ -215,8 +214,9 @@ public class RendererSolid {
         if (pA.getW() <= 0 && pB.getW() <= 0) return;
         if (pA.getW() <= 0 || pB.getW() <= 0) return;
 
-        Vec3D vA = pA.dehomog().get();
-        Vec3D vB = pB.dehomog().get();
+        Vec3D vA = pA.dehomog().orElse(null);
+        Vec3D vB = pB.dehomog().orElse(null);
+        if (vA == null || vB == null) return;
 
         int w = lineRasterizer.getRaster().getWidth();
         int h = lineRasterizer.getRaster().getHeight();
