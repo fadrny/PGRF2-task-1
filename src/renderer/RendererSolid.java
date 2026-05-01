@@ -7,8 +7,8 @@ import rasterize.TriangleRasterizer;
 import solid.Solid;
 
 public class RendererSolid {
-    private LineRasterizer lineRasterizer;
-    private TriangleRasterizer triangleRasterizer;
+    private final LineRasterizer lineRasterizer;
+    private final TriangleRasterizer triangleRasterizer;
 
     public RendererSolid(LineRasterizer lineRasterizer, TriangleRasterizer triangleRasterizer) {
         this.lineRasterizer = lineRasterizer;
@@ -19,6 +19,7 @@ public class RendererSolid {
         for (Part part : solid.getPartBuffer()) {
             switch (part.getType()) {
                 case LINES:
+                    lineRasterizer.setColor(solid.getBaseColor());
                     int index = part.getStartIndex();
                     for (int i = 0; i < part.getCount(); i++) {
                         int indexA = solid.getIndexBuffer().get(index++);

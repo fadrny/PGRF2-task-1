@@ -6,9 +6,14 @@ import rasterize.LineRasterizerGraphics;
 import rasterize.TriangleRasterizer;
 import renderer.RendererSolid;
 import solid.Arrow;
+import solid.Cube;
+import solid.Cylinder;
 import solid.Solid;
+import solid.Sphere;
 import transforms.*;
 import view.Panel;
+
+import java.util.List;
 
 
 public class Controller3D {
@@ -18,8 +23,7 @@ public class Controller3D {
     private final TriangleRasterizer triangleRasterizer;
     private final RendererSolid renderer;
 
-    // Solid
-    private final Solid arrow;
+    private final List<Solid> scene;
 
     public Controller3D(Panel panel) {
         this.panel = panel;
@@ -28,7 +32,11 @@ public class Controller3D {
         this.triangleRasterizer = new TriangleRasterizer(zBuffer);
         this.renderer = new RendererSolid(lineRasterizer, triangleRasterizer);
 
-        this.arrow = new Arrow();
+        Solid arrow = new Arrow().setName("Axis Arrow").setBaseColor(new Col(0xffffff));
+        Solid cube = new Cube();
+        Solid sphere = new Sphere();
+        Solid cylinder = new Cylinder();
+        this.scene = List.of(arrow, cube, sphere, cylinder);
 
         initListeners();
 
@@ -41,7 +49,7 @@ public class Controller3D {
 
     private void drawScene() {
         panel.getRaster().clear();
-        // TODO: zbuffer.clear()
+        zBuffer.clear();
 
 //        zBuffer.setPixelWithZTest(50, 50, 0.5, new Col(0xff0000)); // 0.5
 //        zBuffer.setPixelWithZTest(50, 50, 0.7, new Col(0x00ff00)); // 0.7
@@ -53,7 +61,9 @@ public class Controller3D {
 //            new Vertex(799, 599, 0.5, new Col(0x0000ff))
 //        );
 
-        renderer.render(arrow);
+        for (Solid solid : scene) {
+            renderer.render(solid);
+        }
 
         panel.repaint();
     }
