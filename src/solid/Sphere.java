@@ -28,12 +28,8 @@ public class Sphere extends Solid {
                 double y = radius * Math.sin(phi) * Math.sin(theta);
                 double z = radius * Math.cos(phi);
 
-                double r = Math.max(0, Math.min(1, x + 0.5));
-                double g = Math.max(0, Math.min(1, y + 0.5));
-                double b = Math.max(0, Math.min(1, z + 0.5));
-
-                Vec3D normal = new Vec3D(x, y, z).normalized().orElse(new Vec3D(0,0,1));
-                vertexBuffer.add(new Vertex(x, y, z, new Col(r, g, b),
+                Vec3D normal = new Vec3D(x, y, z).normalized().orElse(new Vec3D(0, 0, 1));
+                vertexBuffer.add(new Vertex(x, y, z, new Col(1.0, 1.0, 1.0),
                         normal, new Vec2D(u, v)));
             }
         }

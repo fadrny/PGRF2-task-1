@@ -66,7 +66,7 @@ public class Controller3D {
 
         cube.setModelMatrix(new Mat4Transl(2, 0, 0));
         sphere.setModelMatrix(new Mat4Transl(4, 0, 0));
-        cylinder.setModelMatrix(new Mat4Transl(6, 0, 0));
+        cylinder.setModelMatrix(new Mat4Transl(2, 0, 0.5));
 
         cube.loadTexture("textures/t1.jpg");
         sphere.loadTexture("textures/t2.jpg");
@@ -227,12 +227,13 @@ public class Controller3D {
         panel.getRaster().clear();
         zBuffer.clear();
 
-        // Odvod pozice světla z modelMatrix světelného tělesa
+        // Odvod pozice a barvy světla z modelMatrix světelného tělesa
         for (Solid s : scene) {
             if (s.getName().equals("Light")) {
                 transforms.Point3D origin = new transforms.Point3D(0, 0, 0);
                 transforms.Point3D worldPos = origin.mul(s.getModelMatrix());
                 lightPosition = new transforms.Vec3D(worldPos.getX(), worldPos.getY(), worldPos.getZ());
+                renderer.setLightColor(s.getBaseColor());
                 break;
             }
         }

@@ -19,6 +19,7 @@ public class RendererSolid {
     private boolean wireframeMode = true;
     private transforms.Vec3D lightPosition;
     private transforms.Vec3D cameraPosition;
+    private transforms.Col lightColor = new transforms.Col(1.0, 1.0, 1.0);
     private boolean useLighting = true;
 
     public RendererSolid(LineRasterizer lineRasterizer, TriangleRasterizer triangleRasterizer) {
@@ -31,6 +32,12 @@ public class RendererSolid {
         this.cameraPosition = cameraPos;
         this.useLighting = useLighting;
         this.triangleRasterizer.setLighting(lightPos, cameraPos, useLighting);
+        this.triangleRasterizer.setLightColor(lightColor);
+    }
+
+    public void setLightColor(transforms.Col color) {
+        this.lightColor = color;
+        this.triangleRasterizer.setLightColor(color);
     }
 
     public void setView(Mat4 view) {
@@ -78,7 +85,7 @@ public class RendererSolid {
                         Vertex a = solid.getVertexBuffer().get(indexA);
                         Vertex b = solid.getVertexBuffer().get(indexB);
 
-                        transformAndRasterizeLine(a, b, transformation);
+                        transformAndRasterizeLine(a, b, transformation, solid.getBaseColor());
                     }
                     break;
 
@@ -207,7 +214,7 @@ public class RendererSolid {
         triangleRasterizer.rasterize(tA, tB, tC);
     }
 
-    private void transformAndRasterizeLine(Vertex a, Vertex b, Mat4 transformation) {
+    private void transformAndRasterizeLine(Vertex a, Vertex b, Mat4 transformation, transforms.Col color) {
         Point3D pA = a.getPosition().mul(transformation);
         Point3D pB = b.getPosition().mul(transformation);
 
@@ -218,14 +225,14 @@ public class RendererSolid {
         Vec3D vB = pB.dehomog().orElse(null);
         if (vA == null || vB == null) return;
 
-        int w = lineRasterizer.getRaster().getWidth();
-        int h = lineRasterizer.getRaster().getHeight();
+        int w = triangleRasterizer.getZBuffer().getWidth();
+        int h = triangleRasterizer.getZBuffer().getHeight();
 
         int x1 = (int) Math.round((vA.getX() + 1) / 2 * (w - 1));
         int y1 = (int) Math.round((1 - vA.getY()) / 2 * (h - 1));
         int x2 = (int) Math.round((vB.getX() + 1) / 2 * (w - 1));
         int y2 = (int) Math.round((1 - vB.getY()) / 2 * (h - 1));
 
-        lineRasterizer.rasterize(x1, y1, x2, y2);
+        triangleRasterizer.rasterizeLine(x1, y1, vA.getZ(), x2, y2, vB.getZ(), color);
     }
 }

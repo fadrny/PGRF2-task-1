@@ -14,12 +14,12 @@ import transforms.Vec3D;
 public class LightSource extends Solid {
     public LightSource() {
         setName("Light");
-        setBaseColor(new Col(1.0, 1.0, 0.0));
+        setBaseColor(new Col(1.0, 1.0, 1.0));
 
         int stacks = 8;
         int slices = 8;
         double radius = 0.15;
-        Col yellow = new Col(1.0, 0.95, 0.2);
+        Col white = new Col(1.0, 1.0, 1.0);
 
         for (int i = 0; i <= stacks; i++) {
             double v = (double) i / stacks;
@@ -31,7 +31,7 @@ public class LightSource extends Solid {
                 double y = radius * Math.sin(phi) * Math.sin(theta);
                 double z = radius * Math.cos(phi);
                 Vec3D normal = new Vec3D(x, y, z).normalized().orElse(new Vec3D(0, 0, 1));
-                vertexBuffer.add(new Vertex(x, y, z, yellow, normal, new Vec2D(u, v)));
+                vertexBuffer.add(new Vertex(x, y, z, white, normal, new Vec2D(u, v)));
             }
         }
 
